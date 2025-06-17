@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Ollama Chatbot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      max-width: 600px;
+      margin: auto;
+      padding: 2em;
+    }
+    #chatbox {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1em;
+      height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .bubble {
+      padding: 10px 15px;
+      border-radius: 20px;
+      margin: 10px 0;
+      max-width: 80%;
+      clear: both;
+      line-height: 1.5;
+    }
+    .user {
+      background: #d1e7ff;
+      align-self: flex-end;
+      margin-left: auto;
+      text-align: right;
+    }
+    .bot {
+      background: #e2ffe2;
+      align-self: flex-start;
+      margin-right: auto;
+      text-align: left;
+    }
+    .input-box {
+      display: flex;
+      gap: 10px;
+      margin-top: 1em;
+    }
+    input {
+      flex-grow: 1;
+      padding: 0.5em;
+      font-size: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h2>💬 ถามข้อมูลจากฐานข้อมูล</h2>
+  <div id="chatbox"></div>
+
+  <div class="input-box">
+    <input type="text" id="question" placeholder="พิมพ์คำถาม เช่น John มีอีเมลอะไร" />
+    <button onclick="ask()">ถาม</button>
+  </div>
+
+  <script>
+    const chatbox = document.getElementById("chatbox");
+
+    function appendMessage(text, sender) {
+      const div = document.createElement("div");
+      div.classList.add("bubble", sender);
+      div.textContent = text;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight; // scroll อัตโนมัติ
+    }
+
+    async function ask() {
+      const input = document.getElementById("question");
+      const question = input.value.trim();
+      if (!question) return;
+
+      appendMessage(question, "user"); // แสดงคำถาม
+      input.value = ""; // เคลียร์ช่องพิมพ์
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+
+        const data = await res.json();
+        appendMessage(data.answer || "ไม่มีคำตอบ", "bot"); // แสดงคำตอบ
+      } catch (err) {
+        appendMessage("เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์", "bot");
+      }
+    }
+
+    // กด Enter เพื่อถามได้ด้วย
+    document.getElementById("question").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") ask();
+    });
+  </script>
+</body>
+</html>
