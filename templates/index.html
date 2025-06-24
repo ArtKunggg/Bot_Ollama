@@ -1,97 +1,113 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
-  <title>Ollama Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แชทบอทถามข้อมูล</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: sans-serif;
-      background: #f7f7f7;
-      max-width: 600px;
-      margin: auto;
-      padding: 2em;
-    }
-    #chatbox {
-      background: #fff;
-      border-radius: 10px;
-      padding: 1em;
-      height: 400px;
-      overflow-y: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .bubble {
-      padding: 10px 15px;
-      border-radius: 20px;
-      margin: 10px 0;
-      max-width: 80%;
-      clear: both;
-      line-height: 1.5;
-    }
-    .user {
-      background: #d1e7ff;
-      align-self: flex-end;
-      margin-left: auto;
-      text-align: right;
-    }
-    .bot {
-      background: #e2ffe2;
-      align-self: flex-start;
-      margin-right: auto;
-      text-align: left;
-    }
-    .input-box {
+      font-family: 'Sarabun', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f8;
       display: flex;
-      gap: 10px;
-      margin-top: 1em;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
     }
-    input {
-      flex-grow: 1;
-      padding: 0.5em;
-      font-size: 1em;
-      border-radius: 8px;
+
+    header {
+      background: #4a90e2;
+      width: 100%;
+      padding: 1rem 2rem;
+      color: white;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .chat-container {
+      margin-top: 2rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 600px;
+      padding: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      margin-top: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      font-size: 1rem;
       border: 1px solid #ccc;
+      border-radius: 6px 0 0 6px;
+      outline: none;
     }
+
     button {
-      padding: 0.5em 1em;
-      font-size: 1em;
-      background-color: #007bff;
+      background: #4a90e2;
       color: white;
       border: none;
-      border-radius: 8px;
+      padding: 0 1.5rem;
+      font-size: 1rem;
+      border-radius: 0 6px 6px 0;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
+
     button:hover {
-      background-color: #0056b3;
+      background: #357ab8;
+    }
+
+    .answer {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #e9f1ff;
+      border-left: 4px solid #4a90e2;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+
+    .loading {
+      color: #999;
+      font-style: italic;
     }
   </style>
 </head>
-<body>
-  <h2>💬 ถามข้อมูลจากฐานข้อมูล</h2>
-  <div id="chatbox"></div>
 
-  <div class="input-box">
-    <input type="text" id="question" placeholder="พิมพ์คำถาม เช่น John มีอีเมลอะไร" />
-    <button onclick="ask()">ถาม</button>
+<body>
+
+  <header>🧠 แชทบอทถามข้อมูลจากระบบ</header>
+
+  <div class="chat-container">
+    <label for="question">พิมพ์คำถามของคุณ:</label>
+    <div class="input-group">
+      <input id="question" type="text" placeholder="เช่น John มีอีเมลอะไร...">
+      <button onclick="ask()">ถาม</button>
+    </div>
+    <div id="answer" class="answer">กรุณาพิมพ์คำถามแล้วกด "ถาม"</div>
   </div>
 
   <script>
-    const chatbox = document.getElementById("chatbox");
-
-    function appendMessage(text, sender) {
-      const div = document.createElement("div");
-      div.classList.add("bubble", sender);
-      div.textContent = text;
-      chatbox.appendChild(div);
-      chatbox.scrollTop = chatbox.scrollHeight; // scroll อัตโนมัติ
-    }
-
     async function ask() {
-      const input = document.getElementById("question");
-      const question = input.value.trim();
-      if (!question) return;
+      const qInput = document.getElementById("question");
+      const answerBox = document.getElementById("answer");
+      const question = qInput.value.trim();
 
-      appendMessage(question, "user"); // แสดงคำถาม
-      input.value = ""; // เคลียร์ช่องพิมพ์
+      if (!question) {
+        answerBox.innerHTML = "กรุณาพิมพ์คำถามก่อนค่ะ";
+        return;
+      }
+
+      answerBox.innerHTML = '<span class="loading">กำลังค้นหาคำตอบ...</span>';
 
       try {
         const res = await fetch("/ask", {
@@ -101,16 +117,13 @@
         });
 
         const data = await res.json();
-        appendMessage(data.answer || "ไม่มีคำตอบ", "bot"); // แสดงคำตอบ
-      } catch (err) {
-        appendMessage("เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์", "bot");
+        answerBox.innerHTML = data.answer;
+      } catch (error) {
+        answerBox.innerHTML = "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์";
       }
     }
-
-    // กด Enter เพื่อถามได้ด้วย
-    document.getElementById("question").addEventListener("keypress", function (e) {
-      if (e.key === "Enter") ask();
-    });
   </script>
+
 </body>
+
 </html>
